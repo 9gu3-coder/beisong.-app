@@ -1,5 +1,5 @@
 // 本地存储服务 - 用于未登录用户的数据持久化
-import { Content, ErrorRecord, ErrorCategory } from '../types';
+import { Content, ErrorRecord, ErrorCategory, User } from '../types';
 import { extractErrorPairs } from './textUtils';
 
 const STORAGE_KEYS = {
@@ -7,12 +7,111 @@ const STORAGE_KEYS = {
   ERRORS: 'recitation_errors',
   USER: 'recitation_user',
   TOKEN: 'recitation_token',
+  USERS: 'recitation_users',
 };
 
 // 生成唯一ID（本地存储用）
 function generateId(): number {
   return Date.now() + Math.floor(Math.random() * 1000);
 }
+
+// 简单的密码加密（不可逆，仅用于演示）
+function hashPassword(password: string): string {
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    const char = password.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return 'h_' + Math.abs(hash).toString(36) + '_' + password.length;
+}
+
+// 本地用户存储类型（包含密码）
+interface StoredUser {
+  id: number;
+  email: string;
+  name: string;
+  password: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// 用户相关操作（本地存储）
+export const localUserService = {
+  // 注册
+  register(name: string, email: string, password: string): User {
+    const users = this.getAllUsers();
+    
+    // 检查邮箱是否已存在
+    if (users.find(u => u.email === email)) {
+      throw new Error('该邮箱已被注册');
+    }
+    
+    const newUser: StoredUser = {
+      id: generateId(),
+      name,
+      email,
+      password: hashPassword(password),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
+    users.push(newUser);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    // 返回不含密码的用户信息
+    const { password: _, ...userWithoutPassword } = newUser;
+    return userWithoutPassword as User;
+  },
+  
+  // 登录
+  login(email: string, password: string): User {
+    const users = this.getAllUsers();
+    const user = users.find(u => u.email === email && u.password === hashPassword(password));
+    
+    if (!user) {
+      throw new Error('邮箱或密码错误');
+    }
+    
+    // 返回不含密码的用户信息
+    const { password: _, ...userWithoutPassword } = user;
+    return userWithoutPassword as User;
+  },
+  
+  // 获取所有用户
+  getAllUsers(): StoredUser[] {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.USERS);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+  
+  // 更新用户信息
+  updateUser(id: number, data: { name?: string; password?: string }): User {
+    const users = this.getAllUsers();
+    const index = users.findIndex(u => u.id === id);
+    
+    if (index === -1) {
+      throw new Error('用户不存在');
+    }
+    
+    if (data.name) {
+      users[index].name = data.name;
+    }
+    if (data.password) {
+      users[index].password = hashPassword(data.password);
+    }
+    users[index].updated_at = new Date().toISOString();
+    
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    // 返回不含密码的用户信息
+    const { password: _, ...userWithoutPassword } = users[index];
+    return userWithoutPassword as User;
+  },
+};
 
 // 内容相关操作
 export const localContentService = {
