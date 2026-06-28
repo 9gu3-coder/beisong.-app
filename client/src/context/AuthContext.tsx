@@ -4,7 +4,7 @@ import { User } from '../types';
 import { authApi } from '../services/api';
 import { localUserService } from '../utils/localStorage';
 
-const ENABLE_BACKEND = true  // 启用本地用户系统
+const ENABLE_BACKEND = false  // 关闭用户系统
 
 interface AuthContextType {
   user: User | null;
