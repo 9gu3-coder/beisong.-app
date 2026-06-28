@@ -3,8 +3,6 @@
   "version": "1.0.0",
   "description": "背诵默写应用",
   "scripts": {
-    "build": "cd client && npm install && npm run build",
-    "start": "cd server && npm install && npm run dev"
-  },
-  "dependencies": {}
+    "build": "cd client && npm install && npm run build"
+  }
 }
