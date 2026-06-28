@@ -1,16 +1,22 @@
 // 顶部导航栏组件
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, logout, backendAvailable } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
     { path: '/', label: '内容列表', match: /^\/$/ },
     { path: '/errors', label: '错题本', match: /^\/errors/ },
-    { path: '/profile', label: '个人中心', match: /^\/profile/ },
+    ...(backendAvailable ? [{ path: '/profile', label: '个人中心', match: /^\/profile/ }] : []),
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -36,23 +42,27 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          {isLoggedIn ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">{user?.name}</span>
-              <button
-                onClick={logout}
-                className="text-sm text-gray-500 hover:text-gray-700"
-              >
-                退出
-              </button>
-            </div>
-          ) : (
-            <Link
-              to="/login"
-              className="text-sm font-medium text-gray-900 hover:text-gray-600"
-            >
-              登录
-            </Link>
+          {backendAvailable && (
+            <>
+              {isLoggedIn ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">{user?.name}</span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    退出
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="text-sm font-medium text-gray-900 hover:text-gray-600"
+                >
+                  登录
+                </Link>
+              )}
+            </>
           )}
         </div>
       </div>

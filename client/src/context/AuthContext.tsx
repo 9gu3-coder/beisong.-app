@@ -3,10 +3,13 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User } from '../types';
 import { authApi } from '../services/api';
 
+const ENABLE_BACKEND = false
+
 interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   isLoading: boolean;
+  backendAvailable: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
@@ -18,14 +21,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [backendAvailable, setBackendAvailable] = useState(false);
 
   useEffect(() => {
     // 检查是否已登录
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && ENABLE_BACKEND) {
       loadUser();
     } else {
       setIsLoading(false);
+      setBackendAvailable(ENABLE_BACKEND);
     }
   }, []);
 
@@ -33,10 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await authApi.getCurrentUser();
       setUser(response.user);
+      setBackendAvailable(true);
     } catch (error) {
-      // token 无效，清除
+      // token 无效或后端不可用，清除
       localStorage.removeItem('token');
       setUser(null);
+      setBackendAvailable(false);
     } finally {
       setIsLoading(false);
     }
@@ -46,12 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.login(email, password);
     localStorage.setItem('token', response.token);
     setUser(response.user);
+    setBackendAvailable(true);
   };
 
   const register = async (email: string, password: string, name: string) => {
     const response = await authApi.register(email, password, name);
     localStorage.setItem('token', response.token);
     setUser(response.user);
+    setBackendAvailable(true);
   };
 
   const logout = () => {
@@ -70,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoggedIn: !!user,
         isLoading,
+        backendAvailable,
         login,
         register,
         logout,
