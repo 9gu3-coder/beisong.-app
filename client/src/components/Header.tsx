@@ -8,7 +8,7 @@ export default function Header() {
   const navigate = useNavigate();
 
   const navItems = [
-    { path: '/', label: '内容列表', match: /^\/$/ },
+    { path: '/', label: '背诵材料', match: /^\/$/ },
     { path: '/errors', label: '错题本', match: /^\/errors/ },
     ...(backendAvailable ? [{ path: '/profile', label: '个人中心', match: /^\/profile/ }] : []),
   ];
@@ -22,7 +22,7 @@ export default function Header() {
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="text-xl font-semibold text-gray-900">
-          背诵默写
+          背诵助手
         </Link>
 
         <nav className="flex items-center gap-1">

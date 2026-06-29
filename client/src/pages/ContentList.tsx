@@ -139,7 +139,7 @@ export default function ContentList() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">默写内容</h1>
+          <h1 className="text-2xl font-bold text-gray-900">背诵材料</h1>
           <p className="text-gray-500 mt-1">
             {activeTab === 'my' ? `共 ${contents.length} 份内容` : `共 ${presetContents.length} 篇精选`}
           </p>
@@ -200,11 +200,13 @@ export default function ContentList() {
               {contents.map(item => (
                 <div
                   key={item.id}
-                  className="card p-5 hover:shadow-md transition-shadow cursor-pointer group"
-                  onClick={() => navigate(`/content/${item.id}`)}
+                  className="card p-5 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-gray-900 truncate flex-1 pr-2">
+                    <h3 
+                      className="font-semibold text-gray-900 truncate flex-1 pr-2 cursor-pointer"
+                      onClick={() => navigate(`/content/${item.id}`)}
+                    >
                       {item.title}
                     </h3>
                     <button
@@ -216,11 +218,28 @@ export default function ContentList() {
                       </svg>
                     </button>
                   </div>
-                  <p className="text-sm text-gray-500 line-clamp-3 mb-3">
+                  <p 
+                    className="text-sm text-gray-500 line-clamp-3 mb-3 cursor-pointer"
+                    onClick={() => navigate(`/content/${item.id}`)}
+                  >
                     {item.content}
                   </p>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-gray-400 mb-3">
                     {formatDate(item.updated_at)}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => navigate(`/read/${item.id}`)}
+                      className="flex-1 py-2 text-sm bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+                    >
+                      🔊 朗读
+                    </button>
+                    <button
+                      onClick={() => navigate(`/practice/${item.id}`)}
+                      className="flex-1 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      ✍️ 默写
+                    </button>
                   </div>
                 </div>
               ))}
@@ -292,14 +311,22 @@ export default function ContentList() {
                 <p className="text-sm text-gray-600 line-clamp-3 mb-4 leading-relaxed">
                   {item.content}
                 </p>
-                <button
-                  onClick={() => handleAddPreset(item)}
-                  disabled={addingPreset === item.id}
-                  className="w-full btn btn-secondary text-sm py-2 flex items-center justify-center gap-2"
-                >
-                  {addingPreset === item.id && <Loading size="sm" />}
-                  {addingPreset === item.id ? '添加中...' : '+ 添加到我的内容'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigate(`/read/${item.id}`)}
+                    className="flex-1 py-2 text-sm bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+                  >
+                    🔊 朗读
+                  </button>
+                  <button
+                    onClick={() => handleAddPreset(item)}
+                    disabled={addingPreset === item.id}
+                    className="flex-1 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-1"
+                  >
+                    {addingPreset === item.id && <Loading size="sm" />}
+                    {addingPreset === item.id ? '添加中...' : '+ 默写'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
