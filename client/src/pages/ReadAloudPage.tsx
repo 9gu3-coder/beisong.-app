@@ -8,7 +8,8 @@ import { Content } from '../types';
 import { presetContents } from '../data/presetContents';
 import { PageLoading } from '../components/Loading';
 
-const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+// 语速选项 - 降低速度范围
+const SPEED_OPTIONS = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1];
 
 export default function ReadAloudPage() {
   const { id } = useParams<{ id?: string }>();
@@ -18,7 +19,7 @@ export default function ReadAloudPage() {
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(0.7);  // 默认语速降低
   const [voiceType, setVoiceType] = useState<'male' | 'female'>('female');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -83,26 +84,52 @@ export default function ReadAloudPage() {
 
   const getChineseVoice = useCallback((type: 'male' | 'female') => {
     const chineseVoices = voices.filter(v => v.lang.startsWith('zh'));
-    if (chineseVoices.length === 0) return voices[0] || null;
+    if (chineseVoices.length === 0) return null;
     
     if (type === 'female') {
+      // 女声匹配：优先选择明确的女性声音
+      const femalePatterns = [
+        'female', '女', 'female', 'F', 'Ting', 'Ting-Ting', 'Huihui',
+        'Xiao', 'Xiaoxiao', 'Xiao-Xiao', 'Yuyi', 'Yaoyao', 'Kaikai',
+        'Lulu', 'Mei', 'Shanshan', 'Yaoyao', 'Wendy', 'v3'
+      ];
       const femaleVoice = chineseVoices.find(v => 
-        v.name.toLowerCase().includes('female') || 
-        v.name.toLowerCase().includes('女') ||
-        v.name.toLowerCase().includes('xiaoxiao') ||
-        v.name.toLowerCase().includes('xiaoyi')
+        femalePatterns.some(p => v.name.toLowerCase().includes(p.toLowerCase()))
       );
-      return femaleVoice || chineseVoices[0];
+      return femaleVoice || chineseVoices.find(v => !isMaleVoice(v.name)) || chineseVoices[0];
     } else {
+      // 男声匹配：优先选择明确的男性声音
+      const malePatterns = [
+        'male', '男', 'M', 'Yunyang', 'YunYang', 'Yunxi', 'YunXi',
+        'Kangkang', 'Yaoyao', 'Wang', 'Huayu', 'Jiahao', 'Jie', 'Yun',
+        'George', 'David', 'James', 'John'
+      ];
       const maleVoice = chineseVoices.find(v => 
-        v.name.toLowerCase().includes('male') || 
-        v.name.toLowerCase().includes('男') ||
-        v.name.toLowerCase().includes('yunyang') ||
-        v.name.toLowerCase().includes('yunxi')
+        malePatterns.some(p => v.name.toLowerCase().includes(p.toLowerCase()))
       );
-      return maleVoice || chineseVoices[0];
+      return maleVoice || chineseVoices.find(v => isMaleVoice(v.name)) || chineseVoices[chineseVoices.length - 1];
     }
   }, [voices]);
+
+  // 判断是否为男声
+  const isMaleVoice = (voiceName: string): boolean => {
+    const malePatterns = ['male', '男', 'Yunyang', 'Yunxi', 'Kangkang', 'Yaoyao', 'Wang', 'Huayu'];
+    const femalePatterns = ['female', '女', 'Ting', 'Xiaoxiao', 'Yuyi', 'Huihui', 'Yaoyao', 'Kaikai', 'Lulu'];
+    
+    const lowerName = voiceName.toLowerCase();
+    
+    // 如果明确包含女声特征，返回 false
+    for (const p of femalePatterns) {
+      if (lowerName.includes(p.toLowerCase())) return false;
+    }
+    
+    // 如果明确包含男声特征，返回 true
+    for (const p of malePatterns) {
+      if (lowerName.includes(p.toLowerCase())) return true;
+    }
+    
+    return false;
+  };
 
   const speakSentence = useCallback((index: number) => {
     if (index >= sentences.length) {
@@ -114,6 +141,8 @@ export default function ReadAloudPage() {
     const utterance = new SpeechSynthesisUtterance(sentences[index]);
     utterance.rate = speed;
     utterance.lang = 'zh-CN';
+    utterance.volume = 1;  // 最大音量
+    utterance.pitch = voiceType === 'female' ? 1.1 : 0.95;  // 女声稍高，男声稍低
     
     const voice = getChineseVoice(voiceType);
     if (voice) {
